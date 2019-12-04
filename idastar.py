@@ -1,11 +1,14 @@
 from ways import load_map_from_csv, compute_distance
 import ways.info
+import sys
+
+sys.setrecursionlimit(1500)
 
 # Define global variables.
 global roads
-# roads = load_map_from_csv()
+#roads = load_map_from_csv()
 global junctions
-# junctions = roads.junctions()
+#junctions = roads.junctions()
 global came_from
 # Create a list of maximum speeds for each road type.
 highway_indexes = ways.info.TYPE_INDICES
@@ -37,34 +40,56 @@ def find_idastar_route(source, target, heuristic_func=heuristic):
     junctions = roads.junctions()
     start = junctions[source]
     goal = junctions[target]
+    # Will be used to re-create the path.
     came_from = {}
     came_from = {start: None}
-    threshold = heuristic_func(start, goal)
-    while True:
-        temp = search(start, goal, 0, threshold)
-        if temp == goal:
-            return goal
-        threshold = temp + 0.5
+    bound = heuristic_func(start, goal)
+    # The frontier.
+    path = [start]
+    # While we have not found the path.
+    while 1:
+        # Search.
+        t = search(path, goal, 0, bound)
+        # If goal, return.
+        if t == goal:
+            return t
+        # Otherwise change the bound.
+        bound = t
 
 
 # Search for the goal node.
-def search(node, goal, g, threshold):
+def search(path, goal, g, bound):
+    # Look at the frontier.
+    node = path[len(path) - 1]
+    # Calculate f.
     f = g + heuristic(node, goal)
-    if f > threshold:
+    # If f larger than bound return it to get new bound.
+    if f > bound:
         return f
+    # If we reached the goal, return the node.
     if node == goal:
-        return goal
-    min_val = 100
+        return node
+    min = 10000
+    # Check all the child nodes.
     for edge in node.links:
+        # Create the junction using the index of the target from the edge.
         child = junctions[edge.target]
-        came_from[child] = node
-        # Calculate price.
-        temp = search(child, goal, g + my_price(edge), threshold)
-        if temp == goal:
-            return goal
-        if temp < min_val:
-            min_val = temp
-    return min_val
+        # If child not in frontier.
+        if child not in path:
+            # Add child to list.
+            path.append(child)
+            # Update came from.
+            came_from[child] = node
+            # Recursively search.
+            t = search(path, goal, g + my_price(edge), bound)
+            # If t is goal, return it.
+            if t == goal:
+                return t
+            if t < min:
+                min = t
+            # Remove node.
+            path.pop()
+    return min
 
 
 # Reconstruct the path going backwards from the goal node.
