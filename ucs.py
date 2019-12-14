@@ -64,7 +64,7 @@ def find_ucs_route(source, target, cost_func=my_price):
                 # Calculate cost, save the previous node.
                 came_from[child] = current_junction
                 new_cost = current_cost + cost_func(edge)
-                working_on.put((current_cost + new_cost, child))
+                working_on.put((new_cost, child))
 
 
 # Calculate the time of each road and sum it to get the total time.
